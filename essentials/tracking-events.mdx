@@ -1,0 +1,259 @@
+---
+title: 'Tracking Events'
+description: 'Learn how to track user events with metadata for semantic analysis'
+---
+
+## Overview
+
+Turret's event tracking is designed to capture user interactions along with free-form text metadata. The API analyzes this metadata to automatically group similar events and detect patterns in user behavior.
+
+## Basic Event Structure
+
+Every event sent to Turret has two required fields:
+
+- `name`: A string describing what happened
+- `metadata`: An object containing free-form text data
+
+```json
+{
+  "name": "User asked question",
+  "metadata": {
+    "prompt": "How do I reset my password?",
+  }
+}
+```
+
+## Authentication
+
+All requests must include your API key in the `X-Api-Key` header:
+
+```bash
+-H "X-Api-Key: your_project_api_key"
+```
+
+<Warning>
+Never expose your API key in client-side code. Always make requests from your backend services.
+</Warning>
+
+## Code Examples
+
+### cURL
+
+The simplest way to track an event:
+
+```bash
+curl -X POST https://api.useturret.com/track \
+  -H "X-Api-Key: your_project_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "User submitted prompt",
+    "metadata": {
+      "prompt": "Write a poem about technology",
+      "model": "gpt-4",
+      "user_type": "premium"
+    }
+  }'
+```
+
+### JavaScript
+
+Using fetch in Node.js or modern browsers:
+
+```javascript
+async function trackEvent(name, metadata) {
+  try {
+    const response = await fetch('https://api.useturret.com/track', {
+      method: 'POST',
+      headers: {
+        'X-Api-Key': process.env.TURRET_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name,
+        metadata
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    console.log('Event tracked successfully');
+  } catch (error) {
+    console.error('Error tracking event:', error);
+  }
+}
+
+// Usage
+trackEvent('User generated content', {
+  prompt: 'Create a marketing email for our new product',
+  output_length: 'long',
+  satisfaction_rating: 'positive'
+});
+```
+
+### Python
+
+Using the requests library:
+
+```python
+import requests
+import os
+
+def track_event(name, metadata):
+    try:
+        response = requests.post(
+            'https://api.useturret.com/track',
+            headers={
+                'X-Api-Key': os.getenv('TURRET_API_KEY'),
+                'Content-Type': 'application/json'
+            },
+            json={
+                'name': name,
+                'metadata': metadata
+            }
+        )
+        response.raise_for_status()
+        print('Event tracked successfully')
+    except requests.exceptions.RequestException as e:
+        print(f'Error tracking event: {e}')
+
+# Usage
+track_event('User asked for help', {
+    'prompt': 'I need help with my Python code',
+    'category': 'programming',
+    'urgency': 'low'
+})
+```
+
+## Event Naming Best Practices
+
+Choose descriptive, consistent names for your events:
+
+<CardGroup cols={2}>
+  <Card title="Good Names" icon="check">
+    - "User submitted prompt"
+    - "Generated response"
+    - "User provided feedback"
+    - "Session started"
+  </Card>
+  <Card title="Avoid" icon="x">
+    - "Event1", "Event2"
+    - "user_action"
+    - "something_happened"
+    - Names that are too generic
+  </Card>
+</CardGroup>
+
+## Metadata Structure
+
+The `metadata` object should contain the free-form text that you want Turret to analyze. Common fields include:
+
+- **prompt**: The user's input or question
+- **response**: AI-generated output
+- **context**: Additional context about the interaction
+- **category**: High-level categorization
+- **user_feedback**: User reactions or ratings
+
+```json
+{
+  "name": "AI response generated",
+  "metadata": {
+    "prompt": "Explain quantum computing in simple terms",
+    "response": "Quantum computing is like having a computer that can...",
+    "context": "educational content request",
+    "response_time_ms": 1200,
+    "user_satisfaction": "thumbs_up"
+  }
+}
+```
+
+## Rate Limits
+
+Turret has generous rate limits to accommodate high-volume applications:
+
+- **Free trial**: 250k total events (within 30 days)
+- **Builder plan**: 1,000,000 events per month
+- **Scale plan**: 10,000,000 events per month
+- **Enterprise**: Custom limits
+
+If you exceed your rate limit, you'll receive a `429 Too Many Requests` response.
+
+## Error Handling
+
+Handle potential errors gracefully:
+
+```javascript
+// Check response status
+if (response.status === 429) {
+  console.log('Rate limit exceeded, backing off...');
+  // Implement exponential backoff
+} else if (response.status === 401) {
+  console.log('Invalid API key');
+} else if (response.status === 400) {
+  console.log('Invalid request format');
+}
+```
+
+## Common Use Cases
+
+### LLM Prompt Tracking
+
+Track user prompts to understand how people interact with your AI:
+
+```json
+{
+  "name": "LLM prompt submitted",
+  "metadata": {
+    "prompt": "Write a business plan for a coffee shop",
+    "model": "gpt-4",
+    "temperature": 0.7,
+    "user_role": "entrepreneur"
+  }
+}
+```
+
+### User Feedback Collection
+
+Capture user reactions to understand satisfaction:
+
+```json
+{
+  "name": "User provided feedback",
+  "metadata": {
+    "original_prompt": "Help me write a resume",
+    "feedback_text": "The suggestions were helpful but too generic",
+    "rating": 3,
+    "improvement_suggestion": "More personalized examples"
+  }
+}
+```
+
+### User Searches
+
+Identify what users are searching for in your app:
+
+```json
+{
+  "name": "Searched for item",
+  "metadata": {
+    "query": "Marvel funko pops",
+  }
+}
+```
+
+### Feature Usage
+
+Track how users interact with different features:
+
+```json
+{
+  "name": "Feature used",
+  "metadata": {
+    "feature_name": "smart_suggestions",
+    "user_query": "I want to improve my writing style",
+    "suggestions_shown": 5,
+    "suggestions_accepted": 2
+  }
+}
+``` 

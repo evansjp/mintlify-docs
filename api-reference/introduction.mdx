@@ -1,33 +1,103 @@
 ---
 title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+description: 'Simple, powerful API for tracking user events and gaining insights'
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+## Welcome to the Turret API
 
-## Welcome
-
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+Turret provides a simple HTTP API for tracking user events with free-form text metadata. Our API analyzes this metadata to automatically detect patterns and group similar events.
 
 <Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
+  title="Single Endpoint Design"
+  icon="zap"
+  href="/api-reference/endpoint/track"
 >
-  View the OpenAPI specification file
+  One endpoint to track all your events - simple and powerful
 </Card>
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+All API requests must include your project API key in the `X-Api-Key` header:
 
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+```bash
+curl -X POST https://api.useturret.com/track \
+  -H "X-Api-Key: your_project_api_key" \
+  -H "Content-Type: application/json"
 ```
+
+<Warning>
+Never expose your API key in client-side code. Always make API calls from your backend services.
+</Warning>
+
+## Base URL
+
+All API requests should be made to:
+```
+https://api.useturret.com
+```
+
+## Request Format
+
+All requests must:
+- Use HTTPS
+- Include `Content-Type: application/json` header
+- Include `X-Api-Key` header with your project API key
+- Send data as JSON in the request body
+
+## Response Format
+
+All responses are returned as JSON with the following structure:
+
+### Success Response
+```json
+{
+  "success": true,
+  "message": "Event tracked successfully",
+  "event_id": "evt_1234567890"
+}
+```
+
+### Error Response
+```json
+{
+  "success": false,
+  "error": "Invalid API key",
+  "code": "INVALID_API_KEY"
+}
+```
+
+## Rate Limits
+
+Turret implements rate limiting to ensure service quality:
+
+- **Free tier**: 10,000 events per month
+- **Pro tier**: 100,000 events per month  
+- **Enterprise**: Custom limits
+
+When you exceed your rate limit, you'll receive a `429 Too Many Requests` response with details about when you can retry.
+
+## Error Codes
+
+Common error codes you might encounter:
+
+| Code | Description |
+|------|-------------|
+| `INVALID_API_KEY` | The provided API key is invalid or missing |
+| `RATE_LIMIT_EXCEEDED` | You have exceeded your monthly event limit |
+| `INVALID_REQUEST` | The request format is incorrect |
+| `MISSING_REQUIRED_FIELD` | Required fields are missing from the request |
+| `TEXT_TOO_LONG` | Metadata text exceeds maximum length |
+
+## Getting Started
+
+1. **Get your API key** from the [Turret Dashboard](https://dashboard.useturret.com)
+2. **Make your first request** to `/track` with event data
+3. **View your results** in the dashboard to see automatic clustering
+
+<Card
+  title="Track Your First Event"
+  icon="rocket"
+  href="/api-reference/endpoint/track"
+>
+  Learn how to send events to Turret
+</Card>

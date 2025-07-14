@@ -1,0 +1,170 @@
+---
+title: 'Understanding Topics'
+description: 'Learn how Turret automatically groups similar events and what insights you can gain'
+---
+
+## What Are Topics?
+
+Turret automatically groups your events based on semantic similarity in the metadata text. Unlike traditional analytics that only group by exact matches, Turret understands meaning and context.
+
+It leverages the technology powering the state-of-the-art LLMs and semantic clustering algorithms to detect similar keywords and phrases. We call these clusters "topics".
+
+For example, these events would be clustered together as a "topic":
+- "How do I reset my password?"
+- "I forgot my login credentials"
+- "Can't remember my account password"
+
+## How Clustering Works
+
+Turret uses advanced natural language processing to:
+
+1. **Analyze text meaning**: Extract semantic features from your event metadata
+2. **Find similarities**: Compare events based on intent and context, not just keywords
+3. **Create clusters**: Group events that share similar meanings or patterns
+4. **Update dynamically**: Clusters evolve as new events are added
+5. **Summarize into topics**: Surface the defining "theme" of this cluster
+
+<Info>
+Clustering happens automatically in the background. You don't need to configure anything - just send your events and Turret does the rest.
+</Info>
+
+## Types of Clusters
+
+### Intent-Based Clusters
+
+Groups events by what users are trying to accomplish:
+
+<CardGroup cols={2}>
+  <Card title="Authentication Issues" icon="lock">
+    - "I can't log in"
+    - "Password reset not working"
+    - "Account locked out"
+  </Card>
+  <Card title="Feature Requests" icon="lightbulb">
+    - "Can you add dark mode?"
+    - "Would love to see templates"
+    - "Need better export options"
+  </Card>
+</CardGroup>
+
+### Topic-Based Clusters
+
+Groups events by subject matter:
+
+<CardGroup cols={2}>
+  <Card title="Technical Support" icon="wrench">
+    - "API not responding"
+    - "Getting 500 errors"
+    - "Integration failing"
+  </Card>
+  <Card title="Content Creation" icon="pen">
+    - "Write a blog post about AI"
+    - "Create marketing copy"
+    - "Generate product descriptions"
+  </Card>
+</CardGroup>
+
+### Sentiment-Based Topics
+
+Groups events by emotional tone:
+
+<CardGroup cols={2}>
+  <Card title="Positive Feedback" icon="thumbs-up">
+    - "This is amazing!"
+    - "Love the new features"
+    - "Exactly what I needed"
+  </Card>
+  <Card title="Frustration" icon="face-frown">
+    - "This is confusing"
+    - "Why isn't this working?"
+    - "Too complicated"
+  </Card>
+</CardGroup>
+
+## Viewing Topics in the Dashboard
+
+Your [Turret Dashboard](https://dashboard.useturret.com) shows topics in several ways:
+
+### Topic Overview
+- **Label**: Summarization of the topic
+- **Size**: Number of events in each topic
+- **Growth**: How topics are expanding over time
+- **Trends**: Which topics are most active
+
+### Topic Details
+- **Representative events**: Key examples from each topic
+- **Time series**: How topic activity changes over time
+- **Metadata patterns**: Common themes in the clustered events
+
+### Cluster Insights
+- **Emerging patterns**: New topics that are forming
+- **Anomalies**: Unusual events that don't fit existing topics
+- **Correlations**: How topics relate to each other
+
+## Interpreting Cluster Results
+
+### High-Value Topics
+
+Pay special attention to:
+
+<AccordionGroup>
+  <Accordion icon="chart-line" title="Fast-growing topics">
+    Rapid growth indicates emerging user needs or pain points that require attention.
+  </Accordion>
+  <Accordion icon="alert" title="Problem-related topics">
+    Topics containing error messages, complaints, or confusion signals areas for improvement.
+  </Accordion>
+  <Accordion icon="star" title="Feature request topics">
+    Groups of similar requests help prioritize product development.
+  </Accordion>
+  <Accordion icon="heart" title="Positive feedback topics">
+    Understand what users love most about your product.
+  </Accordion>
+</AccordionGroup>
+
+### Using Topics for Product Decisions
+
+#### Feature Prioritization
+```
+Topic: "Advanced filtering options"
+- Size: 247 events
+- Growth: +45% this week
+- Action: High priority for next sprint
+```
+
+#### Content Strategy
+```
+Topic: "How to integrate with Slack"
+- Size: 89 events
+- Pattern: Users need integration help
+- Action: Create detailed integration guide
+```
+
+#### UX Improvements
+```
+Topic: "Can't find the export button"
+- Size: 156 events
+- Pattern: UI confusion
+- Action: Redesign export workflow
+```
+
+## Best Practices for Topic Analysis
+
+### Regular Review
+- Check your dashboard weekly to spot new trends
+- Identify user behaviors that you expect and don't expect
+- Monitor topic health and diversity
+
+### Cross-Reference with Metrics
+- Compare topic activity with business metrics
+- Look for correlations between topics and user retention
+- Track how addressing topic insights affects user satisfaction
+
+### Team Collaboration
+- Share topic insights with product, engineering, and customer success teams
+- Use topics to inform sprint planning and roadmap decisions
+- Create feedback loops between topic analysis and product development
+
+<Tip>
+The most actionable insights often come from topics that represent user pain points or unmet needs. These give you clear direction for product improvements.
+</Tip> 

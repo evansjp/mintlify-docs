@@ -1,0 +1,405 @@
+---
+title: 'Best Practices'
+description: 'Get the most value from Turret with these proven strategies and patterns'
+---
+
+## Event Design Principles
+
+### Structure Your Events Consistently
+
+Use a consistent naming convention and metadata structure across your application:
+
+<CardGroup cols={2}>
+  <Card title="Good Structure" icon="check">
+    ```json
+    {
+      "name": "user_submitted_prompt",
+      "metadata": {
+        "prompt": "actual user input",
+        "context": "where it happened",
+        "category": "prompt_type"
+      }
+    }
+    ```
+  </Card>
+  <Card title="Avoid" icon="x">
+    ```json
+    {
+      "name": "event",
+      "metadata": {
+        "data": "mixed content and metadata",
+        "stuff": "unclear purpose"
+      }
+    }
+    ```
+  </Card>
+</CardGroup>
+
+### Focus on User-Generated Text
+
+Turret works best with free-form text that users actually write or say:
+
+**Excellent for Turret:**
+- User prompts and questions
+- Feedback and comments
+- Search queries
+- Support requests
+- Feature requests
+
+**Less valuable for Turret:**
+- System-generated messages
+- Enum values or categories
+- Technical logs
+- Numeric data
+
+## Metadata Design
+
+### Include Rich Context
+
+The more context you provide, the better Turret can understand patterns:
+
+```json
+{
+  "name": "user_asked_question",
+  "metadata": {
+    "question": "How do I integrate your API with my React app?",
+    "user_context": "new developer, first time using our platform",
+    "page_location": "documentation",
+    "session_context": "browsing for 15 minutes",
+    "previous_actions": "viewed quickstart guide"
+  }
+}
+```
+
+### Use Natural Language
+
+Store text as users actually wrote it, not normalized versions:
+
+<CardGroup cols={2}>
+  <Card title="Preserve Original" icon="check">
+    ```json
+    {
+      "prompt": "hey, can u help me fix this bug?",
+      "formality": "casual",
+      "original_text": true
+    }
+    ```
+  </Card>
+  <Card title="Avoid Over-Processing" icon="x">
+    ```json
+    {
+      "prompt": "HELP FIX BUG",
+      "normalized": true,
+      "original_lost": true
+    }
+    ```
+  </Card>
+</CardGroup>
+
+### Capture User Intent
+
+Include fields that help understand what users are trying to accomplish:
+
+```json
+{
+  "name": "feature_request",
+  "metadata": {
+    "request": "Can you add a dark mode to the dashboard?",
+    "user_goal": "reduce eye strain during night work",
+    "current_workaround": "using browser dark mode extension",
+    "urgency": "would be nice to have",
+    "user_type": "power_user"
+  }
+}
+```
+
+## Event Timing
+
+### Track at the Right Moments
+
+Capture events when you have the most complete information:
+
+<AccordionGroup>
+  <Accordion icon="clock" title="User Input Events">
+    Track immediately after user submits text (prompts, questions, feedback)
+  </Accordion>
+  <Accordion icon="brain" title="AI Response Events">
+    Track after generating a response, including both input and output
+  </Accordion>
+  <Accordion icon="heart" title="Satisfaction Events">
+    Track when users provide explicit feedback or ratings
+  </Accordion>
+  <Accordion icon="warning" title="Error Events">
+    Track when users encounter problems, including their reported issue
+  </Accordion>
+</AccordionGroup>
+
+### Batch Non-Critical Events
+
+For high-volume applications, batch events that aren't time-sensitive:
+
+```javascript
+// Batch events for better performance
+const eventBatch = [];
+
+function queueEvent(name, metadata) {
+  eventBatch.push({ name, metadata });
+  
+  // Send batch when it reaches size limit
+  if (eventBatch.length >= 10) {
+    sendBatch();
+  }
+}
+
+function sendBatch() {
+  // Send all events in batch
+  eventBatch.forEach(event => trackEvent(event.name, event.metadata));
+  eventBatch.length = 0;
+}
+```
+
+## Data Quality
+
+### Validate Before Sending
+
+Ensure your events contain meaningful data:
+
+```javascript
+function validateEvent(name, metadata) {
+  // Check for required fields
+  if (!name || !metadata) return false;
+  
+  // Ensure metadata has text content
+  const hasText = Object.values(metadata).some(value => 
+    typeof value === 'string' && value.trim().length > 0
+  );
+  
+  if (!hasText) return false;
+  
+  // Check for overly long text
+  const textValues = Object.values(metadata)
+    .filter(value => typeof value === 'string');
+  
+  if (textValues.some(text => text.length > 10000)) {
+    console.warn('Event contains very long text that may be truncated');
+  }
+  
+  return true;
+}
+```
+
+### Handle Sensitive Data
+
+Be careful with personally identifiable information (PII):
+
+```javascript
+function sanitizeMetadata(metadata) {
+  return Object.fromEntries(
+    Object.entries(metadata).map(([key, value]) => [
+      key,
+      typeof value === 'string' ? 
+        value.replace(/\b\d{3}-\d{2}-\d{4}\b/g, '[SSN]') // Remove SSNs
+             .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[EMAIL]') // Remove emails
+        : value
+    ])
+  );
+}
+```
+
+## Performance Optimization
+
+### Use Async Tracking
+
+Don't block your main application flow:
+
+```javascript
+async function trackEventAsync(name, metadata) {
+  // Use setTimeout to avoid blocking
+  setTimeout(async () => {
+    try {
+      await trackEvent(name, metadata);
+    } catch (error) {
+      console.error('Event tracking failed:', error);
+      // Don't let tracking failures break your app
+    }
+  }, 0);
+}
+```
+
+### Implement Circuit Breakers
+
+Protect your application from API failures:
+
+```javascript
+class EventTracker {
+  constructor() {
+    this.failures = 0;
+    this.maxFailures = 5;
+    this.resetTime = 60000; // 1 minute
+    this.lastFailureTime = 0;
+  }
+  
+  async trackEvent(name, metadata) {
+    if (this.isCircuitOpen()) {
+      console.log('Circuit breaker open, skipping event');
+      return;
+    }
+    
+    try {
+      await this.sendEvent(name, metadata);
+      this.onSuccess();
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+  
+  isCircuitOpen() {
+    return this.failures >= this.maxFailures && 
+           Date.now() - this.lastFailureTime < this.resetTime;
+  }
+  
+  onSuccess() {
+    this.failures = 0;
+  }
+  
+  onFailure() {
+    this.failures++;
+    this.lastFailureTime = Date.now();
+  }
+}
+```
+
+## Analytics Strategy
+
+### Start Simple, Evolve
+
+Begin with basic events and add complexity over time:
+
+**Phase 1: Core Events**
+```json
+{
+  "name": "user_prompt",
+  "metadata": {
+    "prompt": "user's actual question or request"
+  }
+}
+```
+
+**Phase 2: Add Context**
+```json
+{
+  "name": "user_prompt",
+  "metadata": {
+    "prompt": "user's actual question or request",
+    "page": "dashboard",
+    "user_type": "free_tier"
+  }
+}
+```
+
+**Phase 3: Rich Metadata**
+```json
+{
+  "name": "user_prompt",
+  "metadata": {
+    "prompt": "user's actual question or request",
+    "page": "dashboard",
+    "user_type": "free_tier",
+    "session_context": "third question in session",
+    "previous_satisfaction": "positive"
+  }
+}
+```
+
+### Monitor Data Quality
+
+Regularly check that your events are providing value:
+
+- **Topic diversity**: Are you seeing varied, meaningful topics?
+- **Event distribution**: Are some event types dominating?
+- **Text quality**: Is the metadata text rich and varied?
+- **Actionability**: Can you make product decisions from the insights?
+
+## Common Patterns
+
+### The Feedback Loop Pattern
+
+Link user actions to outcomes:
+
+```javascript
+// When user submits a prompt
+trackEvent('prompt_submitted', {
+  prompt: userPrompt,
+  session_id: sessionId,
+  user_expectation: 'helpful_response'
+});
+
+// When user rates the response
+trackEvent('response_rated', {
+  original_prompt: userPrompt,
+  response_quality: rating,
+  session_id: sessionId,
+  improvement_needed: userFeedback
+});
+```
+
+### The Journey Mapping Pattern
+
+Track user progression through your app:
+
+```javascript
+// Entry point
+trackEvent('user_onboarded', {
+  entry_source: 'google_search',
+  first_question: 'How does this work?',
+  user_context: 'evaluating_tools'
+});
+
+// Progression
+trackEvent('feature_discovered', {
+  feature_name: 'advanced_search',
+  discovery_method: 'clicked_tutorial',
+  user_reaction: 'excited_to_try'
+});
+
+// Outcome
+trackEvent('conversion_completed', {
+  conversion_type: 'paid_subscription',
+  deciding_factor: 'advanced_search_capabilities',
+  user_comment: 'exactly_what_i_needed'
+});
+```
+
+### The Problem Detection Pattern
+
+Identify and categorize user issues:
+
+```javascript
+trackEvent('user_stuck', {
+  problem_description: 'Cannot find the export button',
+  user_attempted: 'searched documentation, tried right-click',
+  frustration_level: 'high',
+  context: 'trying_to_export_data_for_presentation'
+});
+```
+
+## Measuring Success
+
+### Key Metrics to Track
+
+- **Topic insights actioned**: How many topic discoveries lead to product changes?
+- **User satisfaction correlation**: Do topic insights correlate with satisfaction improvements?
+- **Feature adoption**: Do insights help predict and improve feature adoption?
+- **Support ticket reduction**: Are you catching issues before they become support requests?
+
+### Regular Review Process
+
+1. **Weekly**: Review new and growing topics
+2. **Monthly**: Analyze topic trends and correlations
+3. **Quarterly**: Assess impact of topic-driven decisions
+4. **Annually**: Review overall analytics strategy and goals
+
+<Tip>
+The most successful teams treat Turret as a continuous insight engine, not just a data collection tool. Regular review and action on topic insights is key to maximizing value.
+</Tip> 

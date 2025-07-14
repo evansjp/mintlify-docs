@@ -1,152 +1,115 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
-    },
-    "version": "1.0.0"
+    "title": "Turret API",
+    "description": "A product analytics API that semantically clusters free text metadata from user events to detect patterns",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Turret Support",
+      "email": "support@useturret.com"
+    }
   },
   "servers": [
     {
-      "url": "http://sandbox.mintlify.com"
+      "url": "https://api.useturret.com",
+      "description": "Production server"
     }
   ],
   "security": [
     {
-      "bearerAuth": []
+      "apiKey": []
     }
   ],
   "paths": {
-    "/plants": {
-      "get": {
-        "description": "Returns all plants from the system that the user has access to",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "The maximum number of results to return",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Plant"
+    "/track": {
+      "post": {
+        "summary": "Track an event",
+        "description": "Track a user event with metadata for semantic analysis and clustering",
+        "operationId": "trackEvent",
+        "requestBody": {
+          "description": "Event data to track",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackEventRequest"
+              },
+              "examples": {
+                "userPrompt": {
+                  "summary": "User submitted a prompt",
+                  "value": {
+                    "name": "User submitted prompt",
+                    "metadata": {
+                      "prompt": "What's the weather like in San Francisco?"
+                    }
+                  }
+                },
+                "userFeedback": {
+                  "summary": "User provided feedback",
+                  "value": {
+                    "name": "User provided feedback",
+                    "metadata": {
+                      "feedback": "The response was helpful but could be more specific",
+                      "rating": 4,
+                      "original_prompt": "How do I optimize my database queries?"
+                    }
+                  }
+                },
+                "featureUsage": {
+                  "summary": "Feature usage tracking",
+                  "value": {
+                    "name": "Feature used",
+                    "metadata": {
+                      "feature_name": "advanced_search",
+                      "user_query": "find all documents about machine learning",
+                      "search_context": "research_project"
+                    }
                   }
                 }
               }
             }
-          },
-          "400": {
-            "description": "Unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "description": "Creates a new plant in the store",
-        "requestBody": {
-          "description": "Plant to add to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Plant"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ID of plant to delete",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "webhooks": {
-    "/plant/webhook": {
-      "post": {
-        "description": "Information about a new plant added to the store",
-        "requestBody": {
-          "description": "Plant added to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
           }
         },
         "responses": {
           "200": {
-            "description": "Return a 200 status to indicate that the data was received successfully"
+            "description": "Event successfully tracked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackEventResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request format or missing required fields",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -154,63 +117,91 @@
   },
   "components": {
     "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
+      "TrackEventRequest": {
         "type": "object",
+        "required": ["name", "metadata"],
         "properties": {
           "name": {
-            "description": "The name of the plant",
-            "type": "string"
+            "type": "string",
+            "description": "A descriptive name for the event",
+            "example": "User submitted prompt",
+            "minLength": 1,
+            "maxLength": 255
           },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
+          "metadata": {
+            "type": "object",
+            "description": "An object containing free-form text data to be analyzed",
+            "additionalProperties": true,
+            "example": {
+              "prompt": "What's the weather like in San Francisco?"
+            }
           }
         }
       },
-      "NewPlant": {
+      "TrackEventResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Indicates if the event was successfully tracked",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable message about the result",
+            "example": "Event tracked successfully"
+          },
+          "event_id": {
+            "type": "string",
+            "description": "Unique identifier for the tracked event",
+            "example": "evt_1234567890abcdef"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Always false for error responses",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "description": "Human-readable error message",
+            "example": "Invalid API key"
+          },
+          "code": {
+            "type": "string",
+            "description": "Machine-readable error code",
+            "example": "INVALID_API_KEY"
+          }
+        }
+      },
+      "RateLimitErrorResponse": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/Plant"
+            "$ref": "#/components/schemas/ErrorResponse"
           },
           {
-            "required": [
-              "id"
-            ],
             "type": "object",
             "properties": {
-              "id": {
-                "description": "Identification number of the plant",
+              "retry_after": {
                 "type": "integer",
-                "format": "int64"
+                "description": "Number of seconds to wait before retrying",
+                "example": 3600
               }
             }
           }
         ]
-      },
-      "Error": {
-        "required": [
-          "error",
-          "message"
-        ],
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "message": {
-            "type": "string"
-          }
-        }
       }
     },
     "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
+      "apiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key",
+        "description": "Your project API key from the Turret dashboard"
       }
     }
   }

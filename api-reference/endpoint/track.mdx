@@ -1,0 +1,152 @@
+---
+title: 'Track Event'
+openapi: 'POST /track'
+---
+
+## Overview
+
+The `/track` endpoint is the core of Turret's API. Use it to send user events with metadata for automatic semantic analysis and clustering.
+
+## Request Body
+
+<ParamField body="name" type="string" required>
+  A descriptive name for the event (e.g., "User submitted prompt", "Feedback received")
+</ParamField>
+
+<ParamField body="metadata" type="object" required>
+  An object containing free-form text data to be analyzed. This should include the actual text content you want Turret to cluster.
+</ParamField>
+
+## Example Request
+
+```bash
+curl -X POST https://api.useturret.com/track \
+  -H "X-Api-Key: your_project_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "User submitted prompt",
+    "metadata": {
+      "prompt": "What's the weather like in San Francisco?",
+    }
+  }'
+```
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the event was successfully tracked
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable message about the result
+</ResponseField>
+
+<ResponseField name="event_id" type="string">
+  Unique identifier for the tracked event
+</ResponseField>
+
+## Example Response
+
+```json
+{
+  "success": true,
+  "message": "Event tracked successfully",
+  "event_id": "evt_1234567890abcdef"
+}
+```
+
+## Common Use Cases
+
+### Track User Prompts
+
+```json
+{
+  "name": "LLM prompt submitted",
+  "metadata": {
+    "prompt": "Write a product description for wireless headphones",
+    "model": "gpt-4",
+    "user_intent": "marketing_content",
+    "session_context": "bulk_content_generation"
+  }
+}
+```
+
+### Track User Feedback
+
+```json
+{
+  "name": "User provided feedback",
+  "metadata": {
+    "feedback": "The response was helpful but could be more specific",
+    "rating": 4,
+    "original_prompt": "How do I optimize my database queries?",
+    "improvement_suggestion": "Include specific examples for my database type"
+  }
+}
+```
+
+### Track Feature Usage
+
+```json
+{
+  "name": "Feature used",
+  "metadata": {
+    "feature_name": "advanced_search",
+    "user_query": "find all documents about machine learning",
+    "search_context": "research_project",
+    "results_found": 47
+  }
+}
+```
+
+## Error Responses
+
+### Invalid API Key (401)
+```json
+{
+  "success": false,
+  "error": "Invalid API key",
+  "code": "INVALID_API_KEY"
+}
+```
+
+### Missing Required Fields (400)
+```json
+{
+  "success": false,
+  "error": "Missing required field: name",
+  "code": "MISSING_REQUIRED_FIELD"
+}
+```
+
+### Rate Limit Exceeded (429)
+```json
+{
+  "success": false,
+  "error": "Rate limit exceeded. Try again in 1 hour.",
+  "code": "RATE_LIMIT_EXCEEDED",
+  "retry_after": 3600
+}
+```
+
+## Best Practices
+
+### Event Names
+- Use descriptive, consistent names
+- Follow a naming convention (e.g., "user_action_object")
+- Avoid generic names like "event" or "action"
+
+### Metadata Structure
+- Include the actual text you want analyzed
+- Provide context about where/when the event occurred
+- Add relevant user or session information
+- Keep individual text fields under 10,000 characters
+
+### Error Handling
+- Always check the `success` field in the response
+- Implement retry logic with exponential backoff
+- Don't let tracking failures break your application flow
+
+<Tip>
+The quality of your insights depends on the quality of your metadata. Include rich, contextual information to get the most value from Turret's clustering.
+</Tip> 
